@@ -1,12 +1,7 @@
-use std::fs::File;
-use std::io::{BufReader, BufRead};
-use std::collections::HashSet;
-use std::iter::FromIterator;
+use std::error::Error;
+use xorf::Filter;
+use dialetto::HP;
 
-use fnv::FnvHasher;
-
-use std::collections::hash_map::DefaultHasher;
-use xorf::{Filter, HashProxy, Xor8, Xor32, Xor16 as Filt};
 
 // fn insert(word: &str, filter: &Xor8) {
 //     let mut h = FnvHasher::default();
@@ -17,25 +12,9 @@ use xorf::{Filter, HashProxy, Xor8, Xor32, Xor16 as Filt};
 
 // }
 
-type HP = HashProxy<String, FnvHasher, Filt>;
 
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-
-    let f = File::open("en_full.txt")?;
-    let tokens = BufReader::new(f)
-        .lines()
-        .filter_map(Result::ok)
-        // .take(10)
-        .filter_map(|line| 
-            line.split_ascii_whitespace().next().map(|v| v.to_string())
-        )
-        .collect::<Vec<_>>();
-
-    let s: HashSet<_> = tokens.iter().collect::<HashSet<_>>();
-    println!("abab => {}", s.contains(&"abab".to_string()));
-
-    let filter: HP = HashProxy::from(&tokens);
+fn main() -> Result<(), Box<dyn Error>> {
+    let filter = dialetto::make_filter("en_full.txt")?;
 
     word_check("this", &filter);
     word_check("bonjour", &filter);  // Really need to clean this wordlist
@@ -53,11 +32,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     word_check("cac", &filter);
     word_check("xx", &filter);
 
-    let encoded = bincode::serialize(&filter)?;
-    std::fs::write("encoded.bin", encoded)?;
+    dialetto::encode_to_file(&filter, "encoded.bin")?;
 
     // Test that it loads
-    let decoded: HP = bincode::deserialize(&std::fs::read("encoded.bin")?)?;
+    let decoded = dialetto::decode_from_file("encoded.bin")?;
     println!("{}", decoded.contains(&"bonjour".to_string()));
 
     Ok(())
