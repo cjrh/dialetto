@@ -14,7 +14,7 @@ use dialetto::HP;
 
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let filter = dialetto::make_filter("en_full.txt")?;
+    let filter = dialetto::make_filter("en_full.txt", Some(100))?;
 
     word_check("this", &filter);
     word_check("bonjour", &filter);  // Really need to clean this wordlist
